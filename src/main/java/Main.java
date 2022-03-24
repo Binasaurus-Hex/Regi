@@ -117,9 +117,10 @@ public class Main {
     public static <T> void print(List<T> list){
         StringBuilder builder = new StringBuilder();
         builder.append("[");
-        for(T item : list){
+        for(int i = 0; i < list.size(); i++){
+            T item = list.get(i);
             builder.append(item);
-            if(list.indexOf(item) < list.size() - 1){
+            if(i < list.size() - 1){
                 builder.append(",");
             }
         }

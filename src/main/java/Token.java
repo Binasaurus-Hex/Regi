@@ -12,6 +12,7 @@ public enum Token {
     CLOSE_BRACE("}"),
     SEMI_COLON(";"),
     COMMA(","),
+    DOT("."),
     EQUALS("="),
     NEWLINE("\n"),
     CARRIAGE("\r"),
