@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
 
 import static com.diogonunes.jcolor.Ansi.colorize;
 
@@ -15,72 +16,36 @@ public class Main {
         String text = new String(Files.readAllBytes(Paths.get(args[0])));
         System.out.println("---- input text ----");
         System.out.println(text+"\n");
-        Token[] tokens = Token.values();
-        List<Object> tokenStream = new ArrayList<>();
-        tokenStream.add(text);
-        for(Token token : tokens){
-            List<Object> totalObjects = new ArrayList<>();
-            for(Object o : tokenStream){
-                if(o instanceof String){
-                    List<Object> parsed = tokenize((String)o, token);
-                    totalObjects.addAll(parsed);
-                }
-                else{
-                    totalObjects.add(o);
-                }
-            }
-            tokenStream = totalObjects;
-        }
-        tokenStream = parseStrings(tokenStream);
-        tokenStream = parseIdentifiers(tokenStream);
-        tokenStream = parseFloats(tokenStream);
-        //tokenStream = removeWhiteSpace(tokenStream);
-        Object[] function = new Object[]{Token.OPEN_BRACKET, "*", Token.CLOSE_BRACKET, Token.FORWARD_ARROW, Identifier.class, Token.OPEN_BRACE, "*", Token.CLOSE_BRACE};
-        Object[] assignment = new Object[]{Identifier.class, Token.EQUALS, "*", Token.SEMI_COLON};
-        Object[] statement = new Object[]{"*", Token.SEMI_COLON};
         System.out.println("---- tokens ----");
+        long startNanos = System.nanoTime();
+        List<Object> tokenStream = tokenize(text);
+        long endNanos = System.nanoTime();
+        System.out.println("parsing took "+(endNanos - startNanos)/1e9 + " seconds");
         print(tokenStream);
         System.out.println("");
         System.out.println("---- syntax highlighting ----");
-        for(Object o : tokenStream){
-            if(o instanceof Identifier){
-                if(((Identifier) o).name.startsWith("\"")){
-                    System.out.print(colorize(((Identifier) o).name, Attribute.GREEN_TEXT()));
-                    continue;
+        syntaxPrint(tokenStream);
+    }
+
+    public static List<Object> parseKeywords(List<Object> tokenStream){
+        List<Object> parsed = new ArrayList<>();
+        for(int i = 0; i < tokenStream.size(); i++){
+            Object token = tokenStream.get(i);
+            boolean foundToken = false;
+            if(token instanceof Identifier){
+                for(Keyword keyword : Keyword.values()){
+                    if(((Identifier) token).name.equals(keyword.name)){
+                        parsed.add(keyword);
+                        foundToken = true;
+                        break;
+                    }
                 }
-                if(((Identifier) o).name.matches("[0-9].+")){
-                    System.out.print(colorize(((Identifier) o).name, Attribute.BLUE_TEXT()));
-                    continue;
-                }
-                if(((Identifier) o).name.matches("[0-9]")){
-                    System.out.print(colorize(((Identifier) o).name, Attribute.BLUE_TEXT()));
-                    continue;
-                }
-                System.out.print(colorize(o.toString(), Attribute.TEXT_COLOR(176, 237, 255)));
-                continue;
             }
-            if(o instanceof Token){
-                if(o == Token.EQUALS){
-                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
-                    continue;
-                }
-                if(o == Token.SEMI_COLON){
-                    System.out.print(colorize(((Token) o).token, Attribute.TEXT_COLOR(255, 123, 0)));
-                    continue;
-                }
-                if(o == Token.OPEN_BRACE || o == Token.CLOSE_BRACE){
-                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
-                    continue;
-                }
-                if(o == Token.BACK_ARROW || o == Token.FORWARD_ARROW){
-                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
-                    continue;
-                }
-                System.out.print(((Token) o).token);
-                continue;
+            if(!foundToken){
+                parsed.add(token);
             }
-            System.out.print(o);
         }
+        return parsed;
     }
 
     public static List<Object> parseFloats(List<Object> tokenStream){
@@ -197,6 +162,31 @@ public class Main {
         return objects;
     }
 
+    public static List<Object> tokenize(String text){
+        Token[] tokens = Token.values();
+        List<Object> tokenStream = new ArrayList<>();
+        tokenStream.add(text);
+        for(Token token : tokens){
+            List<Object> totalObjects = new ArrayList<>();
+            for(Object o : tokenStream){
+                if(o instanceof String){
+                    List<Object> parsed = tokenize((String)o, token);
+                    totalObjects.addAll(parsed);
+                }
+                else{
+                    totalObjects.add(o);
+                }
+            }
+            tokenStream = totalObjects;
+        }
+        tokenStream = parseStrings(tokenStream);
+        //tokenStream = removeWhiteSpace(tokenStream);
+        tokenStream = parseIdentifiers(tokenStream);
+        tokenStream = parseFloats(tokenStream);
+        tokenStream = parseKeywords(tokenStream);
+        return tokenStream;
+    }
+
     public static <T> void print(List<T> list){
         StringBuilder builder = new StringBuilder();
         builder.append("[");
@@ -209,5 +199,51 @@ public class Main {
         }
         builder.append("]");
         System.out.println(builder);
+    }
+
+    public static void syntaxPrint(List<Object> tokenStream){
+        for(Object o : tokenStream){
+            if(o instanceof Keyword){
+                System.out.print(colorize(((Keyword) o).name, Attribute.TEXT_COLOR(255, 123, 0)));
+                continue;
+            }
+            if(o instanceof Identifier){
+                if(((Identifier) o).name.startsWith("\"")){
+                    System.out.print(colorize(((Identifier) o).name, Attribute.GREEN_TEXT()));
+                    continue;
+                }
+                if(((Identifier) o).name.matches("[0-9].+")){
+                    System.out.print(colorize(((Identifier) o).name, Attribute.BLUE_TEXT()));
+                    continue;
+                }
+                if(((Identifier) o).name.matches("[0-9]")){
+                    System.out.print(colorize(((Identifier) o).name, Attribute.BLUE_TEXT()));
+                    continue;
+                }
+                System.out.print(colorize(o.toString(), Attribute.TEXT_COLOR(138, 222, 255)));
+                continue;
+            }
+            if(o instanceof Token){
+                if(o == Token.EQUALS){
+                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
+                    continue;
+                }
+                if(o == Token.SEMI_COLON){
+                    System.out.print(colorize(((Token) o).token, Attribute.TEXT_COLOR(255, 123, 0)));
+                    continue;
+                }
+                if(o == Token.OPEN_BRACE || o == Token.CLOSE_BRACE){
+                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
+                    continue;
+                }
+                if(o == Token.BACK_ARROW || o == Token.FORWARD_ARROW){
+                    System.out.print(colorize(((Token) o).token, Attribute.CYAN_TEXT()));
+                    continue;
+                }
+                System.out.print(((Token) o).token);
+                continue;
+            }
+            System.out.print(o);
+        }
     }
 }
