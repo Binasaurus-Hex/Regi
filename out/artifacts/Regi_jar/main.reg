@@ -1,0 +1,4 @@
+main = (String[] args) -> void {
+	print("hello world { me }");
+<- "2 * 3 - 4";
+}

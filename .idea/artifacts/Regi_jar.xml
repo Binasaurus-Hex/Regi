@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Regi:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Regi_jar</output-path>
+    <root id="archive" name="Regi.jar">
+      <element id="module-output" name="Regi" />
+    </root>
+  </artifact>
+</component>

@@ -1,6 +1,9 @@
-main = () -> void {
-    print("hello -> ");
-    <- 3.12
+main = (String[] args) -> float32 {
+    print("hello -> " + args[0]);
+    Cat cat = new Cat();
+    cat.meow(args[1.2]);
+    if(cat.weight <= 2){
+        <- cat.weight;
+    }
+    <- (3.12 * 4 + 9) - cat.age();
 }
-
-;.,,,
